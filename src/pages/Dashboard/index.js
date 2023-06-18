@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react"
 import Header from "../../components/Header"
 import Modal from "../../components/Modal"
-
 import Title from "../../components/Title"
 import {
   FiMessageSquare,
   FiPlusCircle,
   FiSearch,
   FiEdit2,
+  FiTrash2,
 } from "react-icons/fi"
 import { Link } from "react-router-dom"
 import "./dashboard.css"
@@ -18,9 +18,12 @@ import {
   limit,
   startAfter,
   query,
+  deleteDoc,
+  doc,
 } from "firebase/firestore"
 import { db } from "../../services/firebaseConnection"
 import { format } from "date-fns"
+import { toast } from "react-toastify"
 
 const listRef = collection(db, "chamados")
 export default function Dashboard() {
@@ -31,6 +34,7 @@ export default function Dashboard() {
   const [loadMore, setLoadMore] = useState(false)
   const [openModal, setOpenModal] = useState(false)
   const [detailItem, setDetailItem] = useState()
+  const [refresh, setRefresh] = useState(false)
 
   useEffect(() => {
     async function loadChamados() {
@@ -42,7 +46,7 @@ export default function Dashboard() {
     }
     loadChamados()
     return () => {}
-  }, [])
+  }, [refresh])
 
   async function updateState(querySnapshot) {
     const isColletcionEnmpty = querySnapshot.size === 0
@@ -101,6 +105,20 @@ export default function Dashboard() {
   function handleModal(item) {
     setDetailItem(item)
     setOpenModal(!openModal)
+  }
+  async function handleDelete(item) {
+    if (item.id === null) {
+      return
+    }
+
+    const refDoc = doc(db, "chamados", item.id)
+
+    await deleteDoc(refDoc)
+      .then(() => {
+        toast.success("Chamado excluido com sucesso!")
+        setRefresh(!refresh)
+      })
+      .catch((error) => console.log(error))
   }
   return (
     <div>
@@ -169,6 +187,13 @@ export default function Dashboard() {
                           >
                             <FiEdit2 color="#FFF" size={17} />
                           </Link>
+                          <button
+                            onClick={() => handleDelete(item)}
+                            className="action"
+                            style={{ backgroundColor: "#FD441B" }}
+                          >
+                            <FiTrash2 color="#FFF" size={17} />
+                          </button>
                         </td>
                       </tr>
                     )
